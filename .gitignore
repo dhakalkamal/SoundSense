@@ -1,0 +1,5 @@
+models/*.pth
+models/*.csv
+__pycache__/
+*.pyc
+.env
