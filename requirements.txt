@@ -11,3 +11,7 @@ torch
 torchaudio
 google-generativeai
 anthropic
+tensorflow
+tensorflow-hub
+librosa
+python-multipart

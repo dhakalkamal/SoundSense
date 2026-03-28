@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     LLM_PROVIDER: str = "openai"
     LLM_MODEL: str = "gpt-4o-mini"
-    CLASSIFIER_MODE: str = "fake"  # "fake" or "panns"
+    CLASSIFIER_MODE: str = "fake"  # "fake" | "panns" | "yamnet"
+    YAMNET_MODEL_URL: str = "https://tfhub.dev/google/yamnet/1"
     LOG_LEVEL: str = "INFO"
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",

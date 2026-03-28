@@ -2,10 +2,13 @@
 
 import asyncio
 import logging
+import os
+import shutil
+import tempfile
 import time
 from typing import Any
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, File, Query, Request, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -322,6 +325,112 @@ async def demo_scenarios_preview() -> Any:
             },
         ]
     }
+
+
+@router.post("/audio/classify")
+async def classify_audio(request: Request, file: UploadFile = File(...)) -> Any:
+    """Classify a real audio file through the active classifier and update state.
+
+    Accepts a multipart audio upload, runs inference, updates the state manager,
+    evaluates reasoning, and returns the current situation alongside the detected
+    sound event.
+    """
+    tmp_path: str | None = None
+    try:
+        suffix = os.path.splitext(file.filename or "")[1] or ".mp3"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            shutil.copyfileobj(file.file, tmp)
+            tmp_path = tmp.name
+
+        classifier = request.app.state.classifier
+        sound_event = classifier.classify(audio_path=tmp_path)
+
+        os.unlink(tmp_path)
+        tmp_path = None
+
+        if sound_event.label == "unknown":
+            return JSONResponse(
+                {"ok": False, "error": "Could not classify audio", "label": "unknown"},
+                status_code=200,
+            )
+
+        state_manager = request.app.state.state_manager
+        reasoning_engine = request.app.state.reasoning_engine
+        explainer = request.app.state.explainer
+
+        state_manager.add_event(sound_event)
+        now = time.time()
+        state_manager.decay_inactive(now)
+
+        snapshot = state_manager.get_snapshot()
+        new_flag = reasoning_engine.evaluate(snapshot, now)
+
+        if new_flag != snapshot.active_situation and explainer is not None:
+            from app.models.schemas import ExplainerContext, UrgencyLevel
+            dominant = (
+                max(snapshot.class_state.items(), key=lambda kv: kv[1].count_30s)[0]
+                if snapshot.class_state
+                else sound_event.label
+            )
+            hour = time.localtime(now).tm_hour
+            if 5 <= hour < 12:
+                tod = "morning"
+            elif 12 <= hour < 17:
+                tod = "afternoon"
+            elif 17 <= hour < 21:
+                tod = "evening"
+            else:
+                tod = "night"
+            cs = snapshot.class_state.get(sound_event.label)
+            context = ExplainerContext(
+                flag=new_flag,
+                recent_labels=[e.label for e in list(snapshot.event_log)[-5:]],
+                dominant_label=dominant,
+                duration_s=cs.duration_active_s if cs else None,
+                count=cs.count_30s if cs else None,
+                time_of_day=tod,
+            )
+            result = explainer.explain(context)
+            state_manager.set_situation(new_flag, result.explanation, result.urgency, now)
+        elif new_flag != snapshot.active_situation:
+            state_manager.set_situation(new_flag, None, snapshot.urgency, now)
+
+        snapshot = state_manager.get_snapshot()
+
+        timeline = [
+            {
+                "label": e.label,
+                "confidence": e.confidence,
+                "timestamp": e.timestamp,
+                "elapsed_s": e.elapsed_s,
+            }
+            for e in snapshot.event_log
+        ]
+        raw_labels_only = [e["label"] for e in timeline[-10:]]
+
+        return {
+            "ok": True,
+            "event": {
+                "label": sound_event.label,
+                "confidence": sound_event.confidence,
+                "timestamp": sound_event.timestamp,
+            },
+            "situation": {
+                "flag": snapshot.active_situation.value,
+                "urgency": snapshot.urgency.value,
+                "explanation": snapshot.active_explanation,
+                "flag_changed_at": snapshot.flag_changed_at,
+                "previous_flag": snapshot.previous_flag.value if snapshot.previous_flag else None,
+            },
+            "timeline": timeline,
+            "raw_labels_only": raw_labels_only,
+        }
+
+    except Exception as exc:
+        logger.exception("classify_audio error: %s", exc)
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=500)
 
 
 @router.get("/health")

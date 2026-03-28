@@ -29,7 +29,11 @@ async def lifespan(app: FastAPI):
 
     # ── Classifier ────────────────────────────────────────────────────────────
     classifier: BaseClassifier
-    if settings.CLASSIFIER_MODE == "panns":
+    if settings.CLASSIFIER_MODE == "yamnet":
+        logger.info("[SoundSense] Starting with YAMNet classifier")
+        from app.inference.yamnet_classifier import YAMNetClassifier
+        classifier = YAMNetClassifier()
+    elif settings.CLASSIFIER_MODE == "panns":
         logger.info("[SoundSense] Starting with PANNs CNN14 classifier")
         classifier = PANNsClassifier(settings.PANNS_CHECKPOINT)
     else:

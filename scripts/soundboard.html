@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoundSense — Demo Control Panel</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0A0A0F;
+    --surface:  #13131A;
+    --border:   #2A2A3A;
+    --text:     #F0F0F8;
+    --muted:    #8888AA;
+    --low:      #22C55E;
+    --medium:   #F59E0B;
+    --high:     #EF4444;
+    --critical: #A855F7;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 32px;
+    color: var(--text);
+  }
+  h1 span { color: var(--muted); font-weight: 400; }
+
+  h2 {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  section { margin-bottom: 36px; }
+
+  /* ── Audio cards ─────────────────────────────── */
+  .audio-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+
+  @media (max-width: 900px) {
+    .audio-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .audio-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 12px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+    user-select: none;
+    min-height: 110px;
+    justify-content: center;
+  }
+
+  .audio-card:hover { border-color: #555577; background: #1a1a24; }
+  .audio-card.active { border-color: #6666AA; }
+  .audio-card.sending { opacity: 0.7; pointer-events: none; }
+
+  .audio-card .emoji { font-size: 2rem; line-height: 1; }
+  .audio-card .card-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-align: center;
+  }
+  .audio-card.active .card-label { color: #AAAACC; }
+
+  .audio-card .file-hint {
+    font-size: 0.65rem;
+    color: #555577;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .audio-card.active .file-hint { color: #6666AA; }
+
+  .spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #333355;
+    border-top-color: #8888CC;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+  .audio-card.sending .spinner { display: block; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Scenario buttons ────────────────────────── */
+  .scenario-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: #555577; background: #1a1a24; }
+  .btn:active { background: #222230; }
+
+  .btn-stop {
+    border-color: #552222;
+    color: #EF4444;
+  }
+  .btn-stop:hover { border-color: #EF4444; background: #1a1010; }
+
+  .btn-reset {
+    border-color: #333355;
+    color: var(--muted);
+  }
+  .btn-reset:hover { border-color: #8888AA; }
+
+  .divider {
+    width: 1px;
+    height: 32px;
+    background: var(--border);
+    margin: 0 4px;
+  }
+
+  /* ── Response panel ──────────────────────────── */
+  #response-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    transition: background 0.4s, border-color 0.4s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #response-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.06;
+    pointer-events: none;
+    transition: background 0.4s;
+    background: var(--urgency-color, transparent);
+  }
+
+  .panel-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 700px) {
+    .panel-row { grid-template-columns: 1fr; }
+  }
+
+  .panel-block { display: flex; flex-direction: column; gap: 6px; }
+
+  .panel-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .panel-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .panel-value.flag-value {
+    font-size: 1.1rem;
+  }
+
+  .confidence-badge {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+
+  .explanation-text {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: #C8C8E0;
+    margin-bottom: 20px;
+    min-height: 1.6em;
+  }
+
+  .timeline-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .tl-label { font-size: 0.65rem; color: var(--muted); margin-right: 4px; }
+
+  .chip {
+    background: #1E1E2E;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    color: #AAAACC;
+    font-weight: 500;
+  }
+
+  .chip.latest {
+    border-color: #444466;
+    color: var(--text);
+  }
+
+  .empty-state {
+    color: var(--muted);
+    font-size: 0.9rem;
+    padding: 8px 0;
+  }
+
+  .poll-indicator {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+
+  .poll-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #333355;
+  }
+  .poll-dot.active {
+    background: var(--low);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* urgency-colored flag */
+  .urg-low      { color: var(--low); }
+  .urg-medium   { color: var(--medium); }
+  .urg-high     { color: var(--high); }
+  .urg-critical { color: var(--critical); }
+</style>
+</head>
+<body>
+
+<h1>SoundSense <span>— Demo Control Panel</span></h1>
+
+<!-- ── Section 1: Real Audio ──────────────────────── -->
+<section>
+  <h2>Real Audio Classifier</h2>
+  <div class="audio-grid" id="audio-grid"></div>
+</section>
+
+<!-- ── Section 2: Scenarios ──────────────────────── -->
+<section>
+  <h2>Scenario Engine</h2>
+  <div class="scenario-row" id="scenario-row"></div>
+</section>
+
+<!-- ── Section 3: Live Response ──────────────────── -->
+<section>
+  <h2>Live Response</h2>
+  <div id="response-panel">
+    <div class="poll-indicator">
+      <div class="poll-dot" id="poll-dot"></div>
+      <span id="poll-label">idle</span>
+    </div>
+
+    <div class="panel-row">
+      <div class="panel-block">
+        <div class="panel-label">Detected Sound</div>
+        <div class="panel-value" id="val-label">—</div>
+      </div>
+      <div class="panel-block">
+        <div class="panel-label">Situation Flag</div>
+        <div class="panel-value flag-value" id="val-flag">—</div>
+      </div>
+    </div>
+
+    <div class="panel-label" style="margin-bottom:8px;">Explanation</div>
+    <div class="explanation-text" id="val-explanation">Waiting for audio…</div>
+
+    <div class="timeline-row">
+      <span class="tl-label">RECENT</span>
+      <div id="val-timeline"><span class="empty-state">No events yet</span></div>
+    </div>
+  </div>
+</section>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const BACKEND_URL = 'http://localhost:8000';
+
+// ── Audio card definitions ────────────────────────────────────────────────────
+const AUDIO_CARDS = [
+  { id: 'baby',   emoji: '👶', label: 'Baby Crying'   },
+  { id: 'alarm',  emoji: '🚨', label: 'Smoke Alarm'   },
+  { id: 'knock',  emoji: '🔔', label: 'Door Knock'    },
+  { id: 'glass',  emoji: '💥', label: 'Glass Break'   },
+  { id: 'water',  emoji: '💧', label: 'Water Running' },
+  { id: 'birds',  emoji: '🐦', label: 'Birds'         },
+];
+
+// ── Scenario definitions ──────────────────────────────────────────────────────
+const SCENARIOS = [
+  { label: 'Someone Enters',    name: 'someone_enters'   },
+  { label: 'Alarm Escalation',  name: 'alarm_escalation' },
+  { label: 'Water Forgotten',   name: 'water_forgotten'  },
+  { label: 'Quiet Background',  name: 'quiet_background' },
+  { label: 'Child Alert',       name: 'child_alert'      },
+  { label: 'Glass Break',       name: 'glass_break'      },
+];
+
+const URGENCY_COLORS = {
+  low:      '#22C55E',
+  medium:   '#F59E0B',
+  high:     '#EF4444',
+  critical: '#A855F7',
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const cardFiles   = {};   // cardId → File
+let pollTimer     = null;
+let lastEventLabel = null;
+
+// ── Build Audio Cards ─────────────────────────────────────────────────────────
+const audioGrid = document.getElementById('audio-grid');
+AUDIO_CARDS.forEach(({ id, emoji, label }) => {
+  const card = document.createElement('div');
+  card.className = 'audio-card';
+  card.dataset.id = id;
+  card.innerHTML = `
+    <div class="spinner"></div>
+    <div class="emoji">${emoji}</div>
+    <div class="card-label">${label}</div>
+    <div class="file-hint" id="hint-${id}">click to select file</div>
+  `;
+
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'audio/*';
+  input.style.display = 'none';
+  input.addEventListener('change', () => {
+    if (input.files[0]) {
+      cardFiles[id] = input.files[0];
+      card.classList.add('active');
+      document.getElementById(`hint-${id}`).textContent =
+        truncate(input.files[0].name, 20);
+    }
+  });
+  card.appendChild(input);
+
+  card.addEventListener('click', async () => {
+    if (!cardFiles[id]) {
+      input.click();
+      return;
+    }
+    await sendAudioFile(card, cardFiles[id]);
+  });
+
+  audioGrid.appendChild(card);
+});
+
+function truncate(str, n) {
+  return str.length > n ? str.slice(0, n - 1) + '…' : str;
+}
+
+async function sendAudioFile(card, file) {
+  card.classList.add('sending');
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const res  = await fetch(`${BACKEND_URL}/api/v1/audio/classify`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.ok) {
+      renderResponse(data, data.event);
+    } else {
+      renderError(data.error || 'Classification failed');
+    }
+  } catch (e) {
+    renderError(e.message);
+  } finally {
+    card.classList.remove('sending');
+  }
+}
+
+// ── Build Scenario Buttons ────────────────────────────────────────────────────
+const scenarioRow = document.getElementById('scenario-row');
+SCENARIOS.forEach(({ label, name }) => {
+  const btn = document.createElement('button');
+  btn.className = 'btn';
+  btn.textContent = label;
+  btn.addEventListener('click', () => startScenario(name));
+  scenarioRow.appendChild(btn);
+});
+
+const div = document.createElement('div');
+div.className = 'divider';
+scenarioRow.appendChild(div);
+
+const stopBtn = document.createElement('button');
+stopBtn.className = 'btn btn-stop';
+stopBtn.textContent = '⏹ Stop';
+stopBtn.addEventListener('click', stopScenario);
+scenarioRow.appendChild(stopBtn);
+
+const resetBtn = document.createElement('button');
+resetBtn.className = 'btn btn-reset';
+resetBtn.textContent = '↺ Reset State';
+resetBtn.addEventListener('click', stopScenario);
+scenarioRow.appendChild(resetBtn);
+
+async function startScenario(name) {
+  try {
+    const res  = await fetch(`${BACKEND_URL}/api/v1/scenario/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario: name }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      startPolling();
+    } else {
+      renderError(data.error || 'Could not start scenario');
+    }
+  } catch (e) {
+    renderError(e.message);
+  }
+}
+
+async function stopScenario() {
+  try {
+    await fetch(`${BACKEND_URL}/api/v1/scenario/stop`, { method: 'POST' });
+  } catch (_) {}
+  stopPolling();
+  clearPanel();
+}
+
+// ── Polling ───────────────────────────────────────────────────────────────────
+function startPolling() {
+  stopPolling();
+  setPollIndicator(true);
+  poll();
+  pollTimer = setInterval(poll, 2000);
+}
+
+function stopPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  setPollIndicator(false);
+}
+
+async function poll() {
+  try {
+    const res  = await fetch(`${BACKEND_URL}/api/v1/state/latest`);
+    const data = await res.json();
+    renderStateResponse(data);
+    if (!data.scenario_running) stopPolling();
+  } catch (_) {}
+}
+
+function setPollIndicator(active) {
+  document.getElementById('poll-dot').classList.toggle('active', active);
+  document.getElementById('poll-label').textContent = active ? 'polling' : 'idle';
+}
+
+// ── Render helpers ────────────────────────────────────────────────────────────
+function urgencyClass(u) {
+  return u ? `urg-${u}` : '';
+}
+
+function renderStateResponse(data) {
+  const sit      = data.situation || {};
+  const timeline = data.timeline   || [];
+  const urgency  = sit.urgency     || 'low';
+  const flag     = sit.flag        || 'NONE';
+  const expl     = sit.explanation || null;
+
+  // Detected label: latest event in timeline
+  const latestEvent = timeline.length ? timeline[timeline.length - 1] : null;
+  const detectedLabel = latestEvent ? latestEvent.label : null;
+  const detectedConf  = latestEvent ? latestEvent.confidence : null;
+
+  setLabel(detectedLabel, detectedConf);
+  setFlag(flag, urgency);
+  setExplanation(expl, flag);
+  setTimeline(timeline.slice(-5));
+  setUrgencyBg(urgency);
+}
+
+function renderResponse(data, event) {
+  // Called from audio/classify response
+  const sit     = data.situation || {};
+  const urgency = sit.urgency    || 'low';
+  const flag    = sit.flag       || 'NONE';
+  const expl    = sit.explanation || null;
+
+  setLabel(event ? event.label : null, event ? event.confidence : null);
+  setFlag(flag, urgency);
+  setExplanation(expl, flag);
+  setTimeline((data.timeline || []).slice(-5));
+  setUrgencyBg(urgency);
+}
+
+function renderError(msg) {
+  document.getElementById('val-explanation').textContent = '⚠ ' + msg;
+}
+
+function setLabel(label, conf) {
+  const el = document.getElementById('val-label');
+  if (!label) { el.innerHTML = '—'; return; }
+  const pct = conf != null ? Math.round(conf * 100) : null;
+  el.innerHTML = label.replace(/_/g, ' ')
+    + (pct != null ? `<span class="confidence-badge">${pct}%</span>` : '');
+}
+
+function setFlag(flag, urgency) {
+  const el = document.getElementById('val-flag');
+  el.className = `panel-value flag-value ${urgencyClass(urgency)}`;
+  el.textContent = flag || '—';
+}
+
+function setExplanation(expl, flag) {
+  const el = document.getElementById('val-explanation');
+  if (expl) {
+    el.textContent = expl;
+  } else if (flag && flag !== 'NONE') {
+    el.textContent = 'Generating explanation…';
+  } else {
+    el.textContent = 'Waiting for audio…';
+  }
+}
+
+function setTimeline(events) {
+  const el = document.getElementById('val-timeline');
+  if (!events || !events.length) {
+    el.innerHTML = '<span class="empty-state">No events yet</span>';
+    return;
+  }
+  el.innerHTML = events.map((e, i) => {
+    const cls = i === events.length - 1 ? 'chip latest' : 'chip';
+    const name = e.label.replace(/_/g, ' ');
+    const pct  = Math.round(e.confidence * 100);
+    return `<span class="${cls}">${name} <span style="opacity:0.5">${pct}%</span></span>`;
+  }).join('');
+}
+
+function setUrgencyBg(urgency) {
+  const color = URGENCY_COLORS[urgency] || URGENCY_COLORS.low;
+  document.getElementById('response-panel').style.setProperty('--urgency-color', color);
+}
+
+function clearPanel() {
+  setLabel(null, null);
+  setFlag('NONE', 'low');
+  setExplanation(null, null);
+  setTimeline([]);
+  setUrgencyBg('low');
+}
+</script>
+</body>
+</html>
