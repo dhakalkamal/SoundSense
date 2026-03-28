@@ -67,11 +67,15 @@ class StateManager:
         cs.last_seen = event.timestamp
         cs.duration_active_s = event.timestamp - cs.duration_start  # type: ignore[operator]
 
-    def decay_inactive(self, now: float) -> None:
-        """Mark labels inactive if last_seen is more than 4 seconds ago."""
+    def decay_inactive(self, now: float, timeout_s: float = 8.0) -> None:
+        """Mark labels inactive if last_seen is more than timeout_s ago.
+
+        Default is 8s (raised from 4s) to survive the 1-3s YAMNet inference
+        time between consecutive audio chunks without resetting duration tracking.
+        """
         for cs in self._class_state.values():
             if cs.currently_active and cs.last_seen is not None:
-                if (now - cs.last_seen) > 4.0:
+                if (now - cs.last_seen) > timeout_s:
                     cs.currently_active = False
                     cs.duration_active_s = 0.0
                     cs.duration_start = None

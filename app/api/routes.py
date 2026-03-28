@@ -1,14 +1,16 @@
 """All API endpoints for SoundSense."""
 
 import asyncio
+import io
 import logging
 import os
 import shutil
+import struct
 import tempfile
 import time
 from typing import Any
 
-from fastapi import APIRouter, File, Query, Request, UploadFile
+from fastapi import APIRouter, File, Query, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -337,100 +339,190 @@ async def classify_audio(request: Request, file: UploadFile = File(...)) -> Any:
     """
     tmp_path: str | None = None
     try:
-        suffix = os.path.splitext(file.filename or "")[1] or ".mp3"
+        suffix = os.path.splitext(file.filename or "")[1] or ".wav"
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             shutil.copyfileobj(file.file, tmp)
             tmp_path = tmp.name
 
-        classifier = request.app.state.classifier
-        sound_event = classifier.classify(audio_path=tmp_path)
-
+        audio_bytes = open(tmp_path, "rb").read()
         os.unlink(tmp_path)
         tmp_path = None
 
-        if sound_event.label == "unknown":
-            return JSONResponse(
-                {"ok": False, "error": "Could not classify audio", "label": "unknown"},
-                status_code=200,
-            )
-
-        state_manager = request.app.state.state_manager
-        reasoning_engine = request.app.state.reasoning_engine
-        explainer = request.app.state.explainer
-
-        state_manager.add_event(sound_event)
-        now = time.time()
-        state_manager.decay_inactive(now)
-
-        snapshot = state_manager.get_snapshot()
-        new_flag = reasoning_engine.evaluate(snapshot, now)
-
-        if new_flag != snapshot.active_situation and explainer is not None:
-            from app.models.schemas import ExplainerContext, UrgencyLevel
-            dominant = (
-                max(snapshot.class_state.items(), key=lambda kv: kv[1].count_30s)[0]
-                if snapshot.class_state
-                else sound_event.label
-            )
-            hour = time.localtime(now).tm_hour
-            if 5 <= hour < 12:
-                tod = "morning"
-            elif 12 <= hour < 17:
-                tod = "afternoon"
-            elif 17 <= hour < 21:
-                tod = "evening"
-            else:
-                tod = "night"
-            cs = snapshot.class_state.get(sound_event.label)
-            context = ExplainerContext(
-                flag=new_flag,
-                recent_labels=[e.label for e in list(snapshot.event_log)[-5:]],
-                dominant_label=dominant,
-                duration_s=cs.duration_active_s if cs else None,
-                count=cs.count_30s if cs else None,
-                time_of_day=tod,
-            )
-            result = explainer.explain(context)
-            state_manager.set_situation(new_flag, result.explanation, result.urgency, now)
-        elif new_flag != snapshot.active_situation:
-            state_manager.set_situation(new_flag, None, snapshot.urgency, now)
-
-        snapshot = state_manager.get_snapshot()
-
-        timeline = [
-            {
-                "label": e.label,
-                "confidence": e.confidence,
-                "timestamp": e.timestamp,
-                "elapsed_s": e.elapsed_s,
-            }
-            for e in snapshot.event_log
-        ]
-        raw_labels_only = [e["label"] for e in timeline[-10:]]
-
-        return {
-            "ok": True,
-            "event": {
-                "label": sound_event.label,
-                "confidence": sound_event.confidence,
-                "timestamp": sound_event.timestamp,
-            },
-            "situation": {
-                "flag": snapshot.active_situation.value,
-                "urgency": snapshot.urgency.value,
-                "explanation": snapshot.active_explanation,
-                "flag_changed_at": snapshot.flag_changed_at,
-                "previous_flag": snapshot.previous_flag.value if snapshot.previous_flag else None,
-            },
-            "timeline": timeline,
-            "raw_labels_only": raw_labels_only,
-        }
+        result = _classify_and_update(request.app.state, audio_bytes)
+        if not result["ok"]:
+            return JSONResponse({"ok": False, "error": "Could not classify audio", "label": "unknown"}, status_code=200)
+        return result
 
     except Exception as exc:
         logger.exception("classify_audio error: %s", exc)
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=500)
+
+
+# ── Shared audio pipeline helper ──────────────────────────────────────────────
+
+def _wrap_pcm_as_wav(pcm_bytes: bytes, sample_rate: int = 16000, channels: int = 1, sampwidth: int = 2) -> bytes:
+    """Wrap raw PCM bytes in a WAV container so librosa can load them."""
+    data_len = len(pcm_bytes)
+    buf = io.BytesIO()
+    buf.write(b"RIFF")
+    buf.write(struct.pack("<I", 36 + data_len))
+    buf.write(b"WAVE")
+    buf.write(b"fmt ")
+    buf.write(struct.pack("<I", 16))           # chunk size
+    buf.write(struct.pack("<H", 1))            # PCM format
+    buf.write(struct.pack("<H", channels))
+    buf.write(struct.pack("<I", sample_rate))
+    buf.write(struct.pack("<I", sample_rate * channels * sampwidth))  # byte rate
+    buf.write(struct.pack("<H", channels * sampwidth))                 # block align
+    buf.write(struct.pack("<H", sampwidth * 8))                        # bits per sample
+    buf.write(b"data")
+    buf.write(struct.pack("<I", data_len))
+    buf.write(pcm_bytes)
+    return buf.getvalue()
+
+
+def _detect_audio_suffix(data: bytes) -> str:
+    """Return the correct file suffix based on audio container magic bytes."""
+    if data[:4] == b"RIFF":
+        return ".wav"
+    if data[:4] == b"OggS":
+        return ".ogg"
+    if data[:4] == b"\x1aE\xdf\xa3":
+        return ".webm"
+    # M4A / MP4 container — ftyp box at offset 4
+    if data[4:8] == b"ftyp" or data[4:12] in (b"ftypM4A ", b"ftypmp42", b"ftypiso"):
+        return ".m4a"
+    if data[:3] == b"ID3" or (data[:2] == b"\xff\xfb"):
+        return ".mp3"
+    # Unknown — try m4a as that is what expo-av HIGH_QUALITY produces on iOS/Android
+    return ".m4a"
+
+
+def _classify_and_update(app_state, audio_bytes: bytes) -> dict:
+    """Run classifier on audio bytes, update state + reasoning, return state dict.
+
+    Detects audio container format from magic bytes and saves with the correct
+    extension so librosa/ffmpeg can decode it properly. Supports WAV, M4A, OGG,
+    WebM, MP3 — covering both native expo-av (M4A) and web MediaRecorder (WebM/OGG).
+    """
+    suffix = _detect_audio_suffix(audio_bytes)
+    logger.info("[classify] detected format: %s (%d bytes)", suffix, len(audio_bytes))
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.write(audio_bytes)
+        tmp_path = tmp.name
+
+    try:
+        sound_event = app_state.classifier.classify(audio_path=tmp_path)
+    finally:
+        os.unlink(tmp_path)
+
+    if sound_event.label == "unknown":
+        return {"ok": False, "label": "unknown"}
+
+    now = time.time()
+    app_state.state_manager.add_event(sound_event)
+    app_state.state_manager.decay_inactive(now)
+
+    snapshot = app_state.state_manager.get_snapshot()
+    new_flag = app_state.reasoning_engine.evaluate(snapshot, now)
+
+    if new_flag != snapshot.active_situation and app_state.explainer is not None:
+        from app.models.schemas import ExplainerContext
+        dominant = (
+            max(snapshot.class_state.items(), key=lambda kv: kv[1].count_30s)[0]
+            if snapshot.class_state
+            else sound_event.label
+        )
+        hour = time.localtime(now).tm_hour
+        if 5 <= hour < 12:
+            tod = "morning"
+        elif 12 <= hour < 17:
+            tod = "afternoon"
+        elif 17 <= hour < 21:
+            tod = "evening"
+        else:
+            tod = "night"
+        cs = snapshot.class_state.get(sound_event.label)
+        context = ExplainerContext(
+            flag=new_flag,
+            recent_labels=[e.label for e in list(snapshot.event_log)[-5:]],
+            dominant_label=dominant,
+            duration_s=cs.duration_active_s if cs else None,
+            count=cs.count_30s if cs else None,
+            time_of_day=tod,
+        )
+        result = app_state.explainer.explain(context)
+        app_state.state_manager.set_situation(new_flag, result.explanation, result.urgency, now)
+    elif new_flag != snapshot.active_situation:
+        app_state.state_manager.set_situation(new_flag, None, snapshot.urgency, now)
+
+    snapshot = app_state.state_manager.get_snapshot()
+    timeline = [
+        {"label": e.label, "confidence": e.confidence, "timestamp": e.timestamp, "elapsed_s": e.elapsed_s}
+        for e in snapshot.event_log
+    ]
+    return {
+        "ok": True,
+        "event": {"label": sound_event.label, "confidence": sound_event.confidence, "timestamp": sound_event.timestamp},
+        "situation": {
+            "flag": snapshot.active_situation.value,
+            "urgency": snapshot.urgency.value,
+            "explanation": snapshot.active_explanation,
+            "flag_changed_at": snapshot.flag_changed_at,
+            "previous_flag": snapshot.previous_flag.value if snapshot.previous_flag else None,
+        },
+        "timeline": timeline,
+        "raw_labels_only": [e["label"] for e in timeline[-10:]],
+    }
+
+
+# ── WebSocket audio streaming ─────────────────────────────────────────────────
+
+# 1 second of 16kHz 16-bit mono PCM = 32 000 bytes
+_CHUNK_THRESHOLD = 16000 * 2
+
+
+@router.websocket("/ws/audio")  # reachable at /api/v1/ws/audio
+async def websocket_audio(websocket: WebSocket):
+    """Receive audio chunks from frontend, classify, and push state updates back.
+
+    Each binary message is either a complete WAV (RIFF header present) or raw
+    16kHz 16-bit mono PCM. Chunks are buffered until at least 1 second of audio
+    is accumulated before classification to avoid thrashing the model.
+    """
+    await websocket.accept()
+    logger.info("[WS] client connected")
+    buffer = bytearray()
+
+    try:
+        while True:
+            data = await websocket.receive_bytes()
+            buffer.extend(data)
+
+            # If the message itself is a complete WAV file, classify immediately.
+            is_complete_wav = data[:4] == b"RIFF"
+            ready = is_complete_wav or len(buffer) >= _CHUNK_THRESHOLD
+
+            if ready:
+                audio_bytes = bytes(data) if is_complete_wav else bytes(buffer)
+                buffer.clear()
+
+                try:
+                    loop = asyncio.get_event_loop()
+                    result = await loop.run_in_executor(
+                        None, _classify_and_update, websocket.app.state, audio_bytes
+                    )
+                except Exception as exc:
+                    logger.exception("[WS] classify error: %s", exc)
+                    result = {"ok": False, "error": str(exc)}
+
+                await websocket.send_json(result)
+
+    except WebSocketDisconnect:
+        logger.info("[WS] client disconnected")
 
 
 @router.get("/health")

@@ -12,13 +12,7 @@ class Settings(BaseSettings):
     CLASSIFIER_MODE: str = "fake"  # "fake" | "panns" | "yamnet"
     YAMNET_MODEL_URL: str = "https://tfhub.dev/google/yamnet/1"
     LOG_LEVEL: str = "INFO"
-    CORS_ORIGINS: list[str] = [
-        "http://localhost:3000",
-        "http://localhost:8081",
-        "http://localhost:19006",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:8081",
-    ]
+    CORS_ORIGINS: list[str] = ["*"]
 
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-1.5-flash"

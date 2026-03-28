@@ -13,38 +13,51 @@ YAMNET_MODEL_URL = "https://tfhub.dev/google/yamnet/1"
 YAMNET_SAMPLE_RATE = 16000  # YAMNet requires 16kHz mono
 
 YAMNET_TO_SOUNDSENSE = {
-    "Knock": "door_knock",
-    "Tap": "door_knock",
-    "Door": "door_open",
-    "Creak": "door_open",
-    "Slam": "door_open",
-    "Doorbell": "doorbell",
-    "Bell": "doorbell",
-    "Chime": "doorbell",
+    # child_crying — highly distinctive, keep broad
+    "Baby cry": "child_crying",
+    "Crying": "child_crying",
+    "Whimper": "child_crying",
+    # alarm_beep — highly distinctive electronic sounds
+    "Fire alarm": "alarm_beep",
+    "Smoke detector": "alarm_beep",
     "Alarm": "alarm_beep",
-    "Beep, bleep": "alarm_beep",
-    "Smoke detector, smoke alarm": "alarm_beep",
-    "Carbon monoxide detector": "alarm_beep",
+    "Siren": "alarm_beep",
+    "Civil defense siren": "alarm_beep",
+    "Beep": "alarm_beep",
     "Buzzer": "alarm_beep",
-    "Walk, footsteps": "footsteps",
-    "Footsteps": "footsteps",
-    "Water": "water_running",
-    "Sink (filling or washing)": "water_running",
-    "Faucet": "water_running",
-    "Stream": "water_running",
-    "Bathtub (filling or washing)": "water_running",
-    "Bird": "birds",
-    "Bird vocalization, bird call, bird song": "birds",
-    "Chirp, tweet": "birds",
+    # glass_break — very distinctive transient
     "Shatter": "glass_break",
-    "Glass": "glass_break",
     "Breaking": "glass_break",
+    # raised_voices
     "Screaming": "raised_voices",
     "Shouting": "raised_voices",
-    "Yell": "raised_voices",
-    "Baby cry, infant cry": "child_crying",
-    "Crying, sobbing": "child_crying",
-    "Whimper": "child_crying",
+    "Children shouting": "raised_voices",
+    # water_running — ONLY the most specific classes; broad ones (Waterfall,
+    # Gurgling, Rain) cause false positives when mic captures YouTube audio
+    "Sink (filling or washing)": "water_running",
+    "Faucet": "water_running",
+    "Bathtub (filling or washing)": "water_running",
+    "Water": "water_running",
+    # footsteps
+    "Walk, footsteps": "footsteps",
+    # door_knock
+    "Knock": "door_knock",
+    # doorbell
+    "Doorbell": "doorbell",
+}
+
+# Per-class minimum confidence thresholds.
+# Water gets a high bar (false-positive prone via mic).
+# Baby cry and fire alarm get a lower bar (distinctive sounds, don't miss them).
+LABEL_THRESHOLDS: dict[str, float] = {
+    "child_crying": 0.20,
+    "alarm_beep": 0.20,
+    "glass_break": 0.25,
+    "raised_voices": 0.25,
+    "water_running": 0.50,   # must be unambiguously water
+    "footsteps": 0.35,
+    "door_knock": 0.35,
+    "doorbell": 0.30,
 }
 
 
@@ -111,17 +124,53 @@ class YAMNetClassifier(BaseClassifier):
     def _classify_audio(self, audio_path: str) -> SoundEvent:
         """Run YAMNet inference on an audio file and return a mapped SoundEvent.
 
+        Uses ffmpeg to normalise any input format (M4A, WebM, OGG, CAF, etc.)
+        into a clean 16 kHz mono WAV before passing to librosa. This decouples
+        format detection from classification and avoids librosa's format limits.
+
         Args:
-            audio_path: Path to the audio file.
+            audio_path: Path to the audio file in any ffmpeg-supported format.
 
         Returns:
             SoundEvent with the best-mapped SoundSense label and its score.
         """
-        import librosa
+        import subprocess
+        import numpy as np
 
         tf = self._tf
 
-        y, _ = librosa.load(audio_path, sr=YAMNET_SAMPLE_RATE, mono=True)
+        # Convert to 16kHz mono WAV using ffmpeg regardless of input format
+        wav_path = audio_path + "_converted.wav"
+        try:
+            result = subprocess.run(
+                [
+                    "ffmpeg", "-y",
+                    "-i", audio_path,
+                    "-ar", str(YAMNET_SAMPLE_RATE),
+                    "-ac", "1",
+                    "-f", "wav",
+                    wav_path,
+                ],
+                capture_output=True,
+                timeout=10,
+            )
+            if result.returncode != 0:
+                logger.warning("[YAMNet] ffmpeg failed: %s", result.stderr.decode()[-300:])
+                raise RuntimeError("ffmpeg conversion failed")
+
+            import librosa
+            y, _ = librosa.load(wav_path, sr=YAMNET_SAMPLE_RATE, mono=True)
+        finally:
+            import os as _os
+            if _os.path.exists(wav_path):
+                _os.unlink(wav_path)
+
+        rms = float(np.sqrt(np.mean(y ** 2)))
+        duration = len(y) / YAMNET_SAMPLE_RATE
+        logger.info("[YAMNet] audio: duration=%.2fs rms=%.4f samples=%d", duration, rms, len(y))
+        if rms < 0.001:
+            logger.warning("[YAMNet] audio is nearly silent — chunk likely noise")
+
         waveform = tf.constant(y, dtype=tf.float32)
 
         scores, _embeddings, _spectrogram = self._model(waveform)
@@ -129,20 +178,29 @@ class YAMNetClassifier(BaseClassifier):
 
         # Sort class indices by score descending, keep those above 0.1
         sorted_indices = mean_scores.argsort()[::-1]
+
+        # Log top-5 raw classes so we can see what YAMNet actually hears
+        top5 = [(self._class_names[i], float(mean_scores[i])) for i in sorted_indices[:5]]
+        logger.info("[YAMNet] top-5: %s", [(n, f"{s:.3f}") for n, s in top5])
+
+        # Walk classes in score order; apply per-label threshold
         for idx in sorted_indices:
             score = float(mean_scores[idx])
-            if score < 0.1:
+            if score < 0.10:  # absolute floor — nothing below this is meaningful
                 break
             class_name = self._class_names[idx]
-            mapped = YAMNET_TO_SOUNDSENSE.get(class_name)
-            if mapped:
-                logger.debug("YAMNet: %s → %s (score=%.3f)", class_name, mapped, score)
+            label = YAMNET_TO_SOUNDSENSE.get(class_name)
+            if label is None:
+                continue
+            threshold = LABEL_THRESHOLDS.get(label, 0.25)
+            if score >= threshold:
+                logger.info("[YAMNet] %s → %s (score=%.3f, threshold=%.2f)", class_name, label, score, threshold)
                 return SoundEvent(
-                    label=mapped,
+                    label=label,
                     confidence=score,
                     timestamp=time.time(),
                     elapsed_s=0.0,
                 )
 
-        logger.debug("YAMNet: no mapping found above threshold")
+        logger.info("[YAMNet] no label met threshold — top was: %s (%.3f)", top5[0][0] if top5 else "?", top5[0][1] if top5 else 0)
         return SoundEvent(label="unknown", confidence=0.0, timestamp=time.time(), elapsed_s=0.0)
