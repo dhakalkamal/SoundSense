@@ -5,7 +5,6 @@ No I/O, no async, no LLM calls.
 """
 
 import time
-from collections import Counter
 
 from app.models.schemas import (
     AppState,
@@ -165,14 +164,49 @@ class ReasoningEngine:
         self, state: AppState, flag: SituationFlag, now: float
     ) -> ExplainerContext:
         """Build context object for the LLM explainer from current state."""
-        recent_labels = [e.label for e in state.event_log[-5:]]
+        # recent_labels: only include sounds that are relevant to the active flag.
+        # Using the global last-5 events caused alarm_beep entries (from a prior
+        # ALARM_ESCALATING flag) to dominate the list even after the flag changed
+        # to KNOCK_OR_BELL or CHILD_DISTRESS, producing wrong explanations.
+        _FLAG_RELEVANT_LABELS: dict[SituationFlag, set[str]] = {
+            SituationFlag.SUDDEN_IMPACT: {"glass_break"},
+            SituationFlag.CHILD_DISTRESS: {"child_crying"},
+            SituationFlag.ALARM_ESCALATING: {"alarm_beep"},
+            SituationFlag.ALARM_SINGLE: {"alarm_beep"},
+            SituationFlag.RAISED_VOICES_DETECTED: {"raised_voices"},
+            SituationFlag.ARRIVAL_DETECTED: {"footsteps", "door_open"},
+            SituationFlag.KNOCK_OR_BELL: {"door_knock", "doorbell"},
+            SituationFlag.WATER_RUNNING_LONG: {"water_running"},
+            SituationFlag.WATER_RUNNING_BRIEF: {"water_running"},
+            SituationFlag.FOOTSTEPS_ONLY: {"footsteps"},
+            SituationFlag.CALM_AMBIENT: {"birds"},
+        }
+        relevant = _FLAG_RELEVANT_LABELS.get(flag)
+        if relevant:
+            recent_labels = [
+                e.label for e in state.event_log if e.label in relevant
+            ][-5:]
+        else:
+            recent_labels = [e.label for e in state.event_log[-5:]]
 
-        # Dominant label: most frequent in last 30s
-        cutoff = now - 30.0
-        recent_30s = [e.label for e in state.event_log if e.timestamp >= cutoff]
-        dominant_label: str | None = None
-        if recent_30s:
-            dominant_label = Counter(recent_30s).most_common(1)[0][0]
+        # Dominant label: pinned to the sound that triggered the flag so the LLM
+        # always receives an accurate primary sound rather than the most-frequent
+        # label in the window (which may be a high-frequency alarm_beep drowning
+        # out an unrelated triggering event like glass_break or child_crying).
+        _FLAG_PRIMARY_LABEL: dict[SituationFlag, str] = {
+            SituationFlag.SUDDEN_IMPACT: "glass_break",
+            SituationFlag.CHILD_DISTRESS: "child_crying",
+            SituationFlag.ALARM_ESCALATING: "alarm_beep",
+            SituationFlag.ALARM_SINGLE: "alarm_beep",
+            SituationFlag.RAISED_VOICES_DETECTED: "raised_voices",
+            SituationFlag.ARRIVAL_DETECTED: "door_open",
+            SituationFlag.KNOCK_OR_BELL: "door_knock",
+            SituationFlag.WATER_RUNNING_LONG: "water_running",
+            SituationFlag.WATER_RUNNING_BRIEF: "water_running",
+            SituationFlag.FOOTSTEPS_ONLY: "footsteps",
+            SituationFlag.CALM_AMBIENT: "birds",
+        }
+        dominant_label: str | None = _FLAG_PRIMARY_LABEL.get(flag)
 
         # Duration and count depend on the flag
         duration_s: float | None = None

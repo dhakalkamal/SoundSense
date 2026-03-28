@@ -44,19 +44,40 @@ _SYSTEM_PROMPT = (
     "Rules: use hedged language (may, appears to, seems like, you may want to). "
     "Never make definitive claims. Maximum 20 words. Do not start with I. "
     "Do not use the word detected. "
+    "Always base your explanation on the 'Situation description' field — it defines what is happening. "
     'Respond ONLY with valid JSON: {"explanation": "...", "urgency": "low|medium|high|critical"}'
 )
+
+# Human-readable descriptions so the LLM understands each flag unambiguously
+_FLAG_DESCRIPTIONS: dict[SituationFlag, str] = {
+    SituationFlag.SUDDEN_IMPACT: "glass breaking or a sudden loud impact — possible emergency",
+    SituationFlag.CHILD_DISTRESS: "a child or infant crying — may need attention",
+    SituationFlag.ALARM_ESCALATING: "a repeated alarm beeping multiple times — possible alert or emergency",
+    SituationFlag.RAISED_VOICES_DETECTED: "raised voices or shouting nearby",
+    SituationFlag.ARRIVAL_DETECTED: "someone may be entering — footsteps followed by a door opening",
+    SituationFlag.KNOCK_OR_BELL: "someone at the door — knock or doorbell",
+    SituationFlag.WATER_RUNNING_LONG: "water has been running for an extended period",
+    SituationFlag.ALARM_SINGLE: "a single or brief alarm beep",
+    SituationFlag.WATER_RUNNING_BRIEF: "water running briefly",
+    SituationFlag.FOOTSTEPS_ONLY: "footsteps nearby with no door event",
+    SituationFlag.CALM_AMBIENT: "calm ambient sounds like birds outside",
+    SituationFlag.NONE: "no notable sound activity",
+}
 
 
 def _build_user_message(context: ExplainerContext) -> str:
     """Build the user message string from an ExplainerContext."""
-    parts = [f"Situation flag: {context.flag.value}"]
+    description = _FLAG_DESCRIPTIONS.get(context.flag, context.flag.value)
+    parts = [
+        f"Situation flag: {context.flag.value}",
+        f"Situation description: {description}",
+    ]
 
     if context.recent_labels:
         parts.append(f"Recent sounds: {', '.join(context.recent_labels)}")
 
     if context.dominant_label:
-        parts.append(f"Dominant sound: {context.dominant_label}")
+        parts.append(f"Primary sound: {context.dominant_label}")
 
     if context.duration_s is not None:
         parts.append(f"Duration: {int(context.duration_s)} seconds")
@@ -66,7 +87,9 @@ def _build_user_message(context: ExplainerContext) -> str:
 
     parts.append(f"Time of day: {context.time_of_day}")
 
-    return "\n".join(parts)
+    msg = "\n".join(parts)
+    print(f"\n[OpenAI user message for {context.flag.value}]\n{msg}\n")
+    return msg
 
 
 def _fallback(flag: SituationFlag) -> ExplainerResponse:
