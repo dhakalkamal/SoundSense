@@ -102,7 +102,9 @@ class PANNsClassifier(BaseClassifier):
             n_mels=64,
             f_min=50.0,
             f_max=14000.0,
-        ).to(device)
+            norm='slaney',
+            mel_scale='slaney',
+        ).cpu()
 
         self._labels = _load_audioset_labels(_LABELS_CSV)
 
@@ -148,7 +150,12 @@ class PANNsClassifier(BaseClassifier):
 
     def _infer_from_file(self, audio_path: str) -> SoundEvent:
         """Load audio, compute mel spectrogram, run CNN14, map to SoundSense label."""
-        waveform, sr = torchaudio.load(audio_path)
+        import librosa
+        import numpy as np
+        y, sr = librosa.load(audio_path, sr=None, mono=False)
+        if y.ndim == 1:
+            y = y[np.newaxis, :]  # (1, samples)
+        waveform = torch.from_numpy(y.astype(np.float32))
 
         # Resample if needed
         if sr != SAMPLE_RATE:
@@ -165,21 +172,24 @@ class PANNsClassifier(BaseClassifier):
         else:
             waveform = waveform[:, :CLIP_SAMPLES]
 
-        waveform = waveform.to(self._device)
-
-        # Mel spectrogram: torchaudio returns (channel, n_mels, time)
-        mel = self._mel(waveform)  # (1, n_mels, time)
-        # Reshape to (batch, time, mel_bins) as expected by Cnn14.forward
-        mel = mel.squeeze(0).transpose(0, 1).unsqueeze(0)  # (1, time, mel_bins)
+        # Compute mel spectrogram matching PANNs training preprocessing exactly
+        waveform_cpu = waveform.cpu()
+        mel = self._mel(waveform_cpu)                      # (1, n_mels, time)
+        mel = mel.to(self._device)
+        mel = mel.transpose(1, 2)                          # (1, time, n_mels)
+        mel = (mel + 1e-8).log()                           # log mel
+        # Normalize per-frequency bin (match PANNs bn0 expected input range)
+        mel = mel - mel.mean(dim=1, keepdim=True)          # subtract time-mean per mel bin
+        # Add batch dim already present: (1, time, n_mels) is correct for Cnn14.forward
 
         with torch.no_grad():
             logits = self._model(mel)  # (1, 527)
 
-        scores = logits.squeeze(0).cpu()
+        scores = logits.squeeze(0).cpu().tolist()  # Python floats — avoids MPS tensor comparison issues
 
         # Collect classes above threshold, sorted by score descending
         above = sorted(
-            ((i, float(scores[i])) for i in range(len(scores)) if scores[i] >= CONFIDENCE_THRESHOLD),
+            ((i, score) for i, score in enumerate(scores) if score >= CONFIDENCE_THRESHOLD),
             key=lambda x: x[1],
             reverse=True,
         )
