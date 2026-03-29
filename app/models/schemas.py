@@ -82,3 +82,19 @@ class ExplainerResponse(BaseModel):
 
     explanation: str
     urgency: UrgencyLevel
+
+
+class EmergencyContact(BaseModel):
+    """Emergency contact set during onboarding."""
+
+    name: str = Field(min_length=1, max_length=100)
+    phone: str = Field(min_length=1, max_length=30)
+
+
+class MissedAlertRequest(BaseModel):
+    """Payload sent by the frontend when a high/critical alert goes unread for 30 seconds."""
+
+    flag: str
+    urgency: str
+    explanation: str | None = None
+    alert_timestamp: float  # Unix epoch of the original alert

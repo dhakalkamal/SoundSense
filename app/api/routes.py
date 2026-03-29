@@ -12,7 +12,7 @@ from fastapi import APIRouter, File, Query, Request, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from app.models.schemas import UrgencyLevel
+from app.models.schemas import EmergencyContact, MissedAlertRequest, UrgencyLevel
 from app.scenario.scenarios import SCENARIOS
 
 logger = logging.getLogger(__name__)
@@ -192,6 +192,66 @@ async def state_alerts(request: Request) -> Any:
             }
             for a in alerts
         ]
+    }
+
+
+# ── Emergency contact endpoints ───────────────────────────────────────────────
+
+@router.post("/user/emergency-contact")
+async def set_emergency_contact(body: EmergencyContact, request: Request) -> Any:
+    """Save (or replace) the emergency contact set during onboarding."""
+    request.app.state.emergency_contact = body
+    return {"ok": True, "contact": {"name": body.name, "phone": body.phone}}
+
+
+@router.get("/user/emergency-contact")
+async def get_emergency_contact(request: Request) -> Any:
+    """Return the current emergency contact, or a fallback if none is set."""
+    contact = request.app.state.emergency_contact
+    if contact is None:
+        return {"ok": True, "contact": None}
+    return {"ok": True, "contact": {"name": contact.name, "phone": contact.phone}}
+
+
+@router.delete("/user/emergency-contact")
+async def delete_emergency_contact(request: Request) -> Any:
+    """Clear the stored emergency contact."""
+    request.app.state.emergency_contact = None
+    return {"ok": True}
+
+
+@router.post("/alert/missed")
+async def alert_missed(body: MissedAlertRequest, request: Request) -> Any:
+    """Called by the frontend when a high/critical alert goes unread for 30 seconds.
+
+    Logs the event and returns the emergency contact for the flash card.
+    This endpoint is the single integration point for future SMS/Twilio delivery:
+    drop the outbound call here alongside the log entry.
+    """
+    contact = request.app.state.emergency_contact
+
+    entry = {
+        "flag": body.flag,
+        "urgency": body.urgency,
+        "explanation": body.explanation,
+        "alert_timestamp": body.alert_timestamp,
+        "missed_at": time.time(),
+        "contact_notified": contact is not None,
+    }
+    request.app.state.missed_alerts.append(entry)
+    logger.warning(
+        "[SoundSense] Missed alert — flag=%s urgency=%s contact=%s",
+        body.flag,
+        body.urgency,
+        contact.name if contact else "none",
+    )
+
+    # TODO: drop Twilio SMS call here when ready, e.g.:
+    # await send_sms(to=contact.phone, body=f"SoundSense alert: {body.explanation}")
+
+    return {
+        "ok": True,
+        "contact": {"name": contact.name, "phone": contact.phone} if contact else None,
     }
 
 

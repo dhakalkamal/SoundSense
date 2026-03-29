@@ -77,6 +77,8 @@ async def lifespan(app: FastAPI):
     app.state.reasoning_engine = reasoning_engine
     app.state.explainer = explainer
     app.state.scenario_engine = scenario_engine
+    app.state.emergency_contact = None  # set via POST /user/emergency-contact
+    app.state.missed_alerts: list[dict] = []  # log of unread high/critical alerts
 
     yield
 
