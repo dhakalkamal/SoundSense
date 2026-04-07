@@ -1,17 +1,28 @@
+# Web framework
 fastapi
 uvicorn[standard]
+websockets
+python-multipart
 pydantic
 pydantic-settings
-openai
 python-dotenv
+
+# ML / audio
+torch>=2.2,<2.6
+torchaudio>=2.2,<2.6
+panns_inference==0.1.1
+numpy
+scipy
+scikit-learn
+librosa
+soundfile
+
+# LLM providers (keep only what you actually call)
+openai
+anthropic
+google-generativeai
+
+# Testing
 pytest
 pytest-asyncio
 httpx
-torch
-torchaudio
-google-generativeai
-anthropic
-tensorflow
-tensorflow-hub
-librosa
-python-multipart
