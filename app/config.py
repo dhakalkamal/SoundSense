@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     ANTHROPIC_MODEL: str = "claude-haiku-4-5-20251001"
     PANNS_CHECKPOINT: str = "models/Cnn14_mAP=0.431.pth"
 
+    # WebSocket streaming pipeline settings
+    WS_HOP_SAMPLES: int = 15360          # 50% overlap at 32 kHz (~0.48 s)
+    WS_ENERGY_RMS_THRESHOLD: float = 0.001   # below this RMS → check flatness
+    WS_ENERGY_SF_THRESHOLD: float = 0.85     # spectral flatness above this → silent
+    WS_SMOOTH_WINDOW: int = 3            # number of consecutive windows to vote over
+    WS_SMOOTH_MIN_HITS: int = 2          # minimum hits in window to emit a detection
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 
