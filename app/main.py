@@ -11,8 +11,9 @@ from app.api.ws_routes import router as ws_router
 from app.config import settings
 from app.explainer.anthropic_explainer import AnthropicExplainer
 from app.explainer.base import BaseExplainer
-from app.explainer.gemini_explainer import GeminiExplainer
 from app.explainer.openai_explainer import OpenAIExplainer
+# GeminiExplainer is imported lazily inside lifespan (only when LLM_PROVIDER=gemini)
+# to avoid a top-level import error when google-genai is not installed.
 from app.inference.base import BaseClassifier
 from app.inference.fake_classifier import FakeClassifier
 from app.inference.panns_classifier import PANNsClassifier
@@ -44,6 +45,7 @@ async def lifespan(app: FastAPI):
     # ── Explainer ─────────────────────────────────────────────────────────────
     explainer: BaseExplainer | None = None
     if settings.LLM_PROVIDER == "gemini" and settings.GEMINI_API_KEY:
+        from app.explainer.gemini_explainer import GeminiExplainer  # lazy — avoids import error when google-genai absent
         explainer = GeminiExplainer(
             api_key=settings.GEMINI_API_KEY,
             model=settings.GEMINI_MODEL,

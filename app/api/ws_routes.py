@@ -235,7 +235,7 @@ async def ws_audio(websocket: WebSocket) -> None:
                     smoother.update(set())
                     continue
 
-                scores = classifier.infer_tensor(window)
+                scores = await asyncio.to_thread(classifier.infer_tensor, window)
                 fired = {lbl for lbl, s in scores.items() if s >= PER_CLASS_THRESHOLDS[lbl]}
                 to_emit = smoother.update(fired)
                 if not to_emit:
