@@ -1,0 +1,31 @@
+{
+  "name": "soundsense",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@dr.pogodin/react-native-audio": "^1.18.0",
+    "@expo-google-fonts/domine": "^0.4.2",
+    "@expo/metro-runtime": "55.0.8-canary-20260327-0789fbc",
+    "@react-navigation/native": "^7.2.1",
+    "@react-navigation/stack": "^7.8.8",
+    "expo": "55.0.10-canary-20260327-0789fbc",
+    "expo-font": "55.0.5-canary-20260327-0789fbc",
+    "expo-linear-gradient": "55.0.10-canary-20260327-0789fbc",
+    "expo-notifications": "^55.0.15-canary-20260327-0789fbc",
+    "expo-status-bar": "55.0.5-canary-20260327-0789fbc",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-native": "0.83.4",
+    "react-native-gesture-handler": "^2.30.1",
+    "react-native-safe-area-context": "~5.6.2",
+    "react-native-screens": "~4.23.0",
+    "react-native-web": "~0.21.0"
+  },
+  "private": true
+}
