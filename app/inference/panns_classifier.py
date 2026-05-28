@@ -8,7 +8,6 @@ from pathlib import Path
 
 import torch
 import torchaudio
-from panns_inference.models import Cnn14
 
 from app.inference.base import BaseClassifier
 from app.models.schemas import SoundEvent
@@ -132,8 +131,9 @@ def _load_audioset_labels(csv_path: Path) -> list[str]:
     return labels
 
 
-def _make_model(device: str) -> Cnn14:
+def _make_model(device: str):
     """Instantiate Cnn14 with the training hyperparameters used for the checkpoint."""
+    from panns_inference.models import Cnn14  # lazy import — avoids CSV load at module level
     return Cnn14(
         sample_rate=SAMPLE_RATE,
         window_size=1024,

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "SoundSense",
+    "name": "SurroundSense",
     "slug": "SoundSense",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,16 +13,15 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.SoundSense"
+      "bundleIdentifier": "com.surround.sense"
     },
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
-      "package": "com.anonymous.SoundSense"
+      "package": "com.surround.sense",
+      "permissions": [
+        "RECORD_AUDIO",
+        "INTERNET",
+        "VIBRATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

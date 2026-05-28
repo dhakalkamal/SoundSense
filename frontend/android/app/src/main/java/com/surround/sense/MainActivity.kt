@@ -1,5 +1,4 @@
-package com.anonymous.SoundSense
-
+package com.surround.sense
 import android.os.Build
 import android.os.Bundle
 

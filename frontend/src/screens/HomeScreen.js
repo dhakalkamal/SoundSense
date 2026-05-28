@@ -202,7 +202,7 @@ function FeedbackRow({ notifId, rawLabel, value, onChange }) {
     <View style={fb.row}>
       {value ? (
         <View style={fb.sent}>
-          <Feather name="check-circle" size={13} color={TW.indig600} />
+          <Feather name="check-circle" size={13} color={TW.teal700} />
           <Text style={fb.sentText}>Feedback sent — model will learn</Text>
         </View>
       ) : (
