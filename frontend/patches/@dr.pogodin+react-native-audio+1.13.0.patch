@@ -1,0 +1,229 @@
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/generated/source/buildConfig/release/com/drpogodin/reactnativeaudio/BuildConfig.java b/node_modules/@dr.pogodin/react-native-audio/android/build/generated/source/buildConfig/release/com/drpogodin/reactnativeaudio/BuildConfig.java
+new file mode 100644
+index 0000000..c01de2e
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/generated/source/buildConfig/release/com/drpogodin/reactnativeaudio/BuildConfig.java
+@@ -0,0 +1,12 @@
++/**
++ * Automatically generated file. DO NOT MODIFY
++ */
++package com.drpogodin.reactnativeaudio;
++
++public final class BuildConfig {
++  public static final boolean DEBUG = false;
++  public static final String LIBRARY_PACKAGE_NAME = "com.drpogodin.reactnativeaudio";
++  public static final String BUILD_TYPE = "release";
++  // Field from default config.
++  public static final boolean IS_NEW_ARCHITECTURE_ENABLED = false;
++}
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/aapt_friendly_merged_manifests/release/processReleaseManifest/aapt/AndroidManifest.xml b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/aapt_friendly_merged_manifests/release/processReleaseManifest/aapt/AndroidManifest.xml
+new file mode 100644
+index 0000000..a42a4eb
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/aapt_friendly_merged_manifests/release/processReleaseManifest/aapt/AndroidManifest.xml
+@@ -0,0 +1,10 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.drpogodin.reactnativeaudio" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
++    <uses-permission android:name="android.permission.RECORD_AUDIO" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/aapt_friendly_merged_manifests/release/processReleaseManifest/aapt/output-metadata.json b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/aapt_friendly_merged_manifests/release/processReleaseManifest/aapt/output-metadata.json
+new file mode 100644
+index 0000000..f92cd4e
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/aapt_friendly_merged_manifests/release/processReleaseManifest/aapt/output-metadata.json
+@@ -0,0 +1,18 @@
++{
++  "version": 3,
++  "artifactType": {
++    "type": "AAPT_FRIENDLY_MERGED_MANIFESTS",
++    "kind": "Directory"
++  },
++  "applicationId": "com.drpogodin.reactnativeaudio",
++  "variantName": "release",
++  "elements": [
++    {
++      "type": "SINGLE",
++      "filters": [],
++      "attributes": [],
++      "outputFile": "AndroidManifest.xml"
++    }
++  ],
++  "elementType": "File"
++}
+\ No newline at end of file
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/aar_metadata/release/writeReleaseAarMetadata/aar-metadata.properties b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/aar_metadata/release/writeReleaseAarMetadata/aar-metadata.properties
+new file mode 100644
+index 0000000..1211b1e
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/aar_metadata/release/writeReleaseAarMetadata/aar-metadata.properties
+@@ -0,0 +1,6 @@
++aarFormatVersion=1.0
++aarMetadataVersion=1.0
++minCompileSdk=1
++minCompileSdkExtension=0
++minAndroidGradlePluginVersion=1.0.0
++coreLibraryDesugaringEnabled=false
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/annotation_processor_list/release/javaPreCompileRelease/annotationProcessors.json b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/annotation_processor_list/release/javaPreCompileRelease/annotationProcessors.json
+new file mode 100644
+index 0000000..9e26dfe
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/annotation_processor_list/release/javaPreCompileRelease/annotationProcessors.json
+@@ -0,0 +1 @@
++{}
+\ No newline at end of file
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar
+new file mode 100644
+index 0000000..1d9298a
+Binary files /dev/null and b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar differ
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/compile_symbol_list/release/generateReleaseRFile/R.txt b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/compile_symbol_list/release/generateReleaseRFile/R.txt
+new file mode 100644
+index 0000000..e69de29
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/incremental/release/packageReleaseResources/compile-file-map.properties b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/incremental/release/packageReleaseResources/compile-file-map.properties
+new file mode 100644
+index 0000000..e703d76
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/incremental/release/packageReleaseResources/compile-file-map.properties
+@@ -0,0 +1 @@
++#Fri May 29 19:11:47 EDT 2026
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/incremental/release/packageReleaseResources/merger.xml b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/incremental/release/packageReleaseResources/merger.xml
+new file mode 100644
+index 0000000..e078b5f
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/incremental/release/packageReleaseResources/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main" generated-set="main$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="release$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\release\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="release" generated-set="release$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\release\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\build\generated\res\resValues\release"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\build\generated\res\resValues\release"/></dataSet><mergedItems/></merger>
+\ No newline at end of file
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/local_only_symbol_list/release/parseReleaseLocalResources/R-def.txt b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/local_only_symbol_list/release/parseReleaseLocalResources/R-def.txt
+new file mode 100644
+index 0000000..78ac5b8
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/local_only_symbol_list/release/parseReleaseLocalResources/R-def.txt
+@@ -0,0 +1,2 @@
++R_DEF: Internal format may change without notice
++local
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/manifest_merge_blame_file/release/processReleaseManifest/manifest-merger-blame-release-report.txt b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/manifest_merge_blame_file/release/processReleaseManifest/manifest-merger-blame-release-report.txt
+new file mode 100644
+index 0000000..11ce560
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/manifest_merge_blame_file/release/processReleaseManifest/manifest-merger-blame-release-report.txt
+@@ -0,0 +1,14 @@
++1<?xml version="1.0" encoding="utf-8"?>
++2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++3    package="com.drpogodin.reactnativeaudio" >
++4
++5    <uses-sdk android:minSdkVersion="24" />
++6
++7    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
++7-->C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml:2:5-80
++7-->C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml:2:22-77
++8    <uses-permission android:name="android.permission.RECORD_AUDIO" />
++8-->C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml:3:5-71
++8-->C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml:3:22-68
++9
++10</manifest>
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml
+new file mode 100644
+index 0000000..a42a4eb
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml
+@@ -0,0 +1,10 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.drpogodin.reactnativeaudio" >
++
++    <uses-sdk android:minSdkVersion="24" />
++
++    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
++    <uses-permission android:name="android.permission.RECORD_AUDIO" />
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/navigation_json/release/extractDeepLinksRelease/navigation.json b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/navigation_json/release/extractDeepLinksRelease/navigation.json
+new file mode 100644
+index 0000000..0637a08
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/navigation_json/release/extractDeepLinksRelease/navigation.json
+@@ -0,0 +1 @@
++[]
+\ No newline at end of file
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/nested_resources_validation_report/release/generateReleaseResources/nestedResourcesValidationReport.txt b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/nested_resources_validation_report/release/generateReleaseResources/nestedResourcesValidationReport.txt
+new file mode 100644
+index 0000000..08f4ebe
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/nested_resources_validation_report/release/generateReleaseResources/nestedResourcesValidationReport.txt
+@@ -0,0 +1 @@
++0 Warning/Error
+\ No newline at end of file
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/symbol_list_with_package_name/release/generateReleaseRFile/package-aware-r.txt b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/symbol_list_with_package_name/release/generateReleaseRFile/package-aware-r.txt
+new file mode 100644
+index 0000000..7d370bb
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/intermediates/symbol_list_with_package_name/release/generateReleaseRFile/package-aware-r.txt
+@@ -0,0 +1 @@
++com.drpogodin.reactnativeaudio
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/kotlin/compileReleaseKotlin/cacheable/dirty-sources.txt b/node_modules/@dr.pogodin/react-native-audio/android/build/kotlin/compileReleaseKotlin/cacheable/dirty-sources.txt
+new file mode 100644
+index 0000000..099e85c
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/kotlin/compileReleaseKotlin/cacheable/dirty-sources.txt
+@@ -0,0 +1,5 @@
++C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\java\com\drpogodin\reactnativeaudio\ReactNativeAudioModule.kt
++C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\java\com\drpogodin\reactnativeaudio\Errors.kt
++C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\java\com\drpogodin\reactnativeaudio\ReactNativeAudioPackage.kt
++C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\java\com\drpogodin\reactnativeaudio\SamplePlayer.kt
++C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\java\com\drpogodin\reactnativeaudio\InputAudioStream.kt
+\ No newline at end of file
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/kotlin/compileReleaseKotlin/local-state/build-history.bin b/node_modules/@dr.pogodin/react-native-audio/android/build/kotlin/compileReleaseKotlin/local-state/build-history.bin
+new file mode 100644
+index 0000000..f8bfed9
+Binary files /dev/null and b/node_modules/@dr.pogodin/react-native-audio/android/build/kotlin/compileReleaseKotlin/local-state/build-history.bin differ
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/build/outputs/logs/manifest-merger-release-report.txt b/node_modules/@dr.pogodin/react-native-audio/android/build/outputs/logs/manifest-merger-release-report.txt
+new file mode 100644
+index 0000000..d701f33
+--- /dev/null
++++ b/node_modules/@dr.pogodin/react-native-audio/android/build/outputs/logs/manifest-merger-release-report.txt
+@@ -0,0 +1,24 @@
++-- Merging decision tree log ---
++manifest
++ADDED from C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml:1:1-4:12
++INJECTED from C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml:1:1-4:12
++	package
++		INJECTED from C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml
++	xmlns:android
++		ADDED from C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml:1:11-69
++uses-permission#android.permission.MODIFY_AUDIO_SETTINGS
++ADDED from C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml:2:5-80
++	android:name
++		ADDED from C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml:2:22-77
++uses-permission#android.permission.RECORD_AUDIO
++ADDED from C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml:3:5-71
++	android:name
++		ADDED from C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml:3:22-68
++uses-sdk
++INJECTED from C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml reason: use-sdk injection requested
++INJECTED from C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml
++INJECTED from C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml
++	android:targetSdkVersion
++		INJECTED from C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml
++	android:minSdkVersion
++		INJECTED from C:\Users\vyenk\SoundSense\SoundSense\frontend\node_modules\@dr.pogodin\react-native-audio\android\src\main\AndroidManifestNew.xml
+diff --git a/node_modules/@dr.pogodin/react-native-audio/android/src/main/java/com/drpogodin/reactnativeaudio/ReactNativeAudioPackage.kt b/node_modules/@dr.pogodin/react-native-audio/android/src/main/java/com/drpogodin/reactnativeaudio/ReactNativeAudioPackage.kt
+index 175de52..34bfe2e 100644
+--- a/node_modules/@dr.pogodin/react-native-audio/android/src/main/java/com/drpogodin/reactnativeaudio/ReactNativeAudioPackage.kt
++++ b/node_modules/@dr.pogodin/react-native-audio/android/src/main/java/com/drpogodin/reactnativeaudio/ReactNativeAudioPackage.kt
+@@ -24,6 +24,7 @@ class ReactNativeAudioPackage : BaseReactPackage() {
+         ReactNativeAudioModule.NAME,
+         canOverrideExistingModule = false,  // canOverrideExistingModule
+         needsEagerInit = false,  // needsEagerInit
++        hasConstants = true,  // hasConstants (required in RN 0.76+)
+         isCxxModule = false,  // isCxxModule
+         isTurboModule = true // isTurboModule
+       )
