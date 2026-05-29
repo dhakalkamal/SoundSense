@@ -9,7 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@dr.pogodin/react-native-audio": "^1.18.0",
+    "@dr.pogodin/react-native-audio": "1.13.0",
     "@expo-google-fonts/domine": "^0.4.2",
     "@expo/metro-runtime": "~4.0.1",
     "@expo/vector-icons": "~14.0.4",
