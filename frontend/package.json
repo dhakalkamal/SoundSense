@@ -11,21 +11,21 @@
   "dependencies": {
     "@dr.pogodin/react-native-audio": "^1.18.0",
     "@expo-google-fonts/domine": "^0.4.2",
-    "@expo/metro-runtime": "~55.0.11",
+    "@expo/metro-runtime": "~4.0.1",
     "@react-navigation/native": "^7.2.1",
     "@react-navigation/stack": "^7.8.8",
-    "expo": "~55.0.26",
-    "expo-font": "~13.0.4",
-    "expo-linear-gradient": "~14.0.2",
+    "expo": "~52.0.49",
+    "expo-font": "~12.0.10",
+    "expo-linear-gradient": "~13.0.2",
     "expo-status-bar": "~2.0.1",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
-    "react-native": "0.83.9",
-    "react-native-gesture-handler": "^2.30.1",
-    "react-native-permissions": "^5.5.1",
-    "react-native-safe-area-context": "~5.6.2",
-    "react-native-screens": "~4.23.0",
-    "react-native-web": "~0.21.0"
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-native": "0.76.9",
+    "react-native-gesture-handler": "~2.20.2",
+    "react-native-permissions": "^4.1.5",
+    "react-native-safe-area-context": "4.12.0",
+    "react-native-screens": "~4.4.0",
+    "react-native-web": "~0.19.13"
   },
   "private": true
 }
