@@ -15,8 +15,8 @@ buildscript {
   }
   dependencies {
     classpath('com.android.tools.build:gradle')
-    classpath('com.facebook.react:react-native-gradle-plugin')
     classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+    // react-native-gradle-plugin is applied via settings.gradle includeBuild — no classpath needed
   }
 }
 

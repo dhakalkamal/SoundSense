@@ -12,6 +12,7 @@
     "@dr.pogodin/react-native-audio": "^1.18.0",
     "@expo-google-fonts/domine": "^0.4.2",
     "@expo/metro-runtime": "~4.0.1",
+    "@expo/vector-icons": "~14.0.4",
     "@react-navigation/native": "^7.2.1",
     "@react-navigation/stack": "^7.8.8",
     "expo": "~52.0.49",
