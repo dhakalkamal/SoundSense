@@ -98,6 +98,21 @@ npx expo run:android   # or: npx expo run:ios
 
 ---
 
+## Release Build Setup
+
+To build a release APK, create `frontend/android/keystore.properties` (this file is gitignored and must be created manually):
+
+```properties
+MYAPP_UPLOAD_STORE_FILE=<keystore filename>
+MYAPP_UPLOAD_KEY_ALIAS=<key alias>
+MYAPP_UPLOAD_STORE_PASSWORD=<password>
+MYAPP_UPLOAD_KEY_PASSWORD=<password>
+```
+
+Contact a team member for the actual values. Never commit this file.
+
+---
+
 ## Network Configuration
 
 The frontend connects to the backend using a hardcoded host. Before running on a physical device, update this to your server's local IP address:
